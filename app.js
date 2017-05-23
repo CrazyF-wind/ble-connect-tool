@@ -48,7 +48,7 @@ var BluetoothScanner = module.exports = function (option, callback) {
                         /**
                          * 连接ble设备
                          */
-                        connect_ble_device(function (data) {
+                        connect_ble_device(RSSI,lescan_time,function (data) {
                             console.log(`connect_ble_device:${JSON.stringify(data)}`)
                             var handleValue = data["value"]["handleValue"];
                             var connect_time = data["value"]["connect_time"];
@@ -56,7 +56,7 @@ var BluetoothScanner = module.exports = function (option, callback) {
                                 /**
                                  * 断开ble设备
                                  */
-                                disconnect_ble_device(handleValue,function (data) {
+                                disconnect_ble_device(handleValue,RSSI,lescan_time,connect_time,function (data) {
                                     console.log(`disconnect_ble_device:${JSON.stringify(data)}`)
                                     if (data["result"] === 1) {
                                         /**
@@ -66,14 +66,14 @@ var BluetoothScanner = module.exports = function (option, callback) {
                                             console.log(`close_dongle:${JSON.stringify(data)}`)
                                             if (data["result"] === 1) {
                                                 callback({
-                                                    "result": 1,
+                                                    "result": 0,
                                                     "value": "成功！连接时间：" + connect_time + "ms，扫描时间：" + lescan_time + "ms，信号强度："+RSSI+"！"
                                                 })
                                             } else {
                                                 //返回dongle关闭失败情况
                                                 callback({
-                                                    "result": 0,
-                                                    "value": "蓝牙断开失败！连接时间：" + connect_time + "ms，扫描时间：" + lescan_time + "ms！"
+                                                    "result": 5,
+                                                    "value": "蓝牙断开失败！连接时间：" + connect_time + "ms，扫描时间：" + lescan_time + "ms，信号强度："+RSSI+"！"
                                                 })
                                             }
                                         })
@@ -83,14 +83,14 @@ var BluetoothScanner = module.exports = function (option, callback) {
                                             if(data["result"] === 1){
                                                 //返回断开失败情况
                                                 callback({
-                                                    "result": 0,
-                                                    "value": "设备断开失败！连接时间：" + connect_time + "ms，扫描时间：" + lescan_time + "ms！"
+                                                    "result": 4,
+                                                    "value": "设备断开失败！连接时间：" + connect_time + "ms，扫描时间：" + lescan_time + "ms，信号强度："+RSSI+"！"
                                                 })
                                             }else {
                                                 //返回dongle关闭失败情况
                                                 callback({
-                                                    "result": 0,
-                                                    "value": "蓝牙断开失败！连接时间：" + connect_time + "ms，扫描时间：" + lescan_time + "ms！"
+                                                    "result": 5,
+                                                    "value": "蓝牙断开失败！连接时间：" + connect_time + "ms，扫描时间：" + lescan_time + "ms，信号强度："+RSSI+"！"
                                                 })
                                             }
                                         })
@@ -103,13 +103,13 @@ var BluetoothScanner = module.exports = function (option, callback) {
                                     if(data["result"] === 1){
                                         //返回连接失败情况
                                         callback({
-                                            "result": 0,
+                                            "result": 3,
                                             "value": "连接失败！扫描时间：" + lescan_time + "ms！"
                                         })
                                     }else {
                                         //返回dongle关闭失败情况
                                         callback({
-                                            "result": 0,
+                                            "result": 5,
                                             "value": "蓝牙断开失败！扫描时间：" + lescan_time + "ms！"
                                         })
                                     }
@@ -122,13 +122,13 @@ var BluetoothScanner = module.exports = function (option, callback) {
                             if(data["result"] === 1){
                                 //返回扫描失败情况
                                 callback({
-                                    "result": 0,
+                                    "result": 2,
                                     "value": "扫描失败！"
                                 })
                             }else {
                                 //返回dongle关闭失败情况
                                 callback({
-                                    "result": 0,
+                                    "result": 5,
                                     "value": "蓝牙断开失败！"
                                 })
                             }
@@ -142,13 +142,13 @@ var BluetoothScanner = module.exports = function (option, callback) {
                     if(data["result"] === 1){
                         //返回dongle启动失败情况
                         callback({
-                            "result": 0,
+                            "result": 1,
                             "value": "蓝牙启动失败！"
                         })
                     }else {
                         //返回dongle关闭失败情况
                         callback({
-                            "result": 0,
+                            "result": 5,
                             "value": "蓝牙断开失败！"
                         })
                     }
@@ -215,7 +215,7 @@ var BluetoothScanner = module.exports = function (option, callback) {
                 } else {
                     console.log("扫描:" + macAddr + ",失败！");
                     dbtools.updateStatisticsdb(macAddr, flag, mi, mobile, devicename, {
-                        "lescan": 0
+                        "lescan_failed": 1,
                     },function() {
                         callback({"result": 0, "value": "failed"})
                     });
@@ -227,14 +227,14 @@ var BluetoothScanner = module.exports = function (option, callback) {
          * 连接ble设备
          * @param callback
          */
-        function connect_ble_device(callback) {
+        function connect_ble_device(RSSI,lescan_time,callback) {
             //begin Connect
             var begin_time = new Date();
             var end_time = new Date();
             //如果mac不是公共的（00开头），需要加参数--random 去连接
             //var hciToolScan = spawn('hcitool', ['EdInt',"--random",macAddr, mobileopt["connect-interval"], mobileopt["connect-window"], mobileopt["connect-min_interval"], mobileopt["connect-max_interval"]]);
-            var hciToolEdInt = spawn('hcitool', ['EdInt', macAddr, mobileopt["connect-interval"], mobileopt["connect-window"], mobileopt["connect-min_interval"], mobileopt["connect-max_interval"]]);
-            console.log("hcitool lecc(EdInt): started..." + ['EdInt', macAddr, mobileopt["connect-interval"], mobileopt["connect-window"], mobileopt["connect-min_interval"], mobileopt["connect-max_interval"]]);
+            var hciToolEdInt = spawn('hcitool', ['EdInt', macAddr, mobileopt["connect_interval"], mobileopt["connect_window"], mobileopt["connect_min_interval"], mobileopt["connect_max_interval"]]);
+            console.log("hcitool lecc(EdInt): started..." + ['EdInt', macAddr, mobileopt["connect_interval"], mobileopt["connect_window"], mobileopt["connect_min_interval"], mobileopt["connect_max_interval"]]);
             hciToolEdInt.stdout.on('data', function (data) {
                 if (data.length) {
                     end_time = new Date();
@@ -288,7 +288,6 @@ var BluetoothScanner = module.exports = function (option, callback) {
                 }
                 else {
                     console.log('\t' + "连接成功！退出时间:" + (new Date().getTime() - begin_time) + "ms");
-
                 }
             });
         }
@@ -298,7 +297,7 @@ var BluetoothScanner = module.exports = function (option, callback) {
          * @param handleValue
          * @param callback
          */
-        function disconnect_ble_device(handleValue,callback) {
+        function disconnect_ble_device(handleValue,RSSI,lescan_time,connect_time,callback) {
             var handleEndtime = new Date();
             console.log("disconnect_handleValue:"+handleValue)
             var hciTool_ledc = spawn('hcitool', ['ledc', handleValue]);
@@ -353,7 +352,6 @@ var BluetoothScanner = module.exports = function (option, callback) {
                     console.log("hcitool Device " + hcidev + "down fail!");
                     //写入统计库
                     dbtools.updateStatisticsdb(macAddr, flag, mi, mobile, devicename, {
-                        "lescan_failed": 1,
                         "devicedown_failed": 1
                     },function() {
                         callback({"result": 0, "value": "关闭dongle失败！"});
@@ -363,7 +361,6 @@ var BluetoothScanner = module.exports = function (option, callback) {
                     console.log("hcitool Device " + hcidev + "down suceed!");
                     //写入统计库
                     dbtools.updateStatisticsdb(macAddr, flag, mi, mobile, devicename, {
-                        "lescan_failed": 1,
                         "devicedown_success": 1
                     }, function () {
                         callback({"result": 1, "value": "关闭dongle成功！"});
