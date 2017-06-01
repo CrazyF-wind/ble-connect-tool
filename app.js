@@ -21,7 +21,7 @@ var BluetoothScanner = module.exports = function (option, callback) {
         var macAddr = option['mac'];
         var mobile = option['mobile'];
         var devicename = option['name'];
-        var mi = option['mi'];
+        var mi = Number(option['mi']);
         var flag = option['flag'];
         var mobileopt = option['mobileopt'];
 
