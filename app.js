@@ -207,7 +207,7 @@ var BluetoothScanner = module.exports = function (option, callback) {
                     console.log("扫描:" + macAddr + ",成功！扫描时间：" + lescan_time + "ms");
                     //写入统计库
                     dbtools.updateStatisticsdb(macAddr, flag, mi, mobile, devicename, {
-                        "lescan": 1
+                        "lescan_success": 1
                     },function() {
                         callback({"result": 1, "value": {"RSSI": RSSI, "lescan_time": lescan_time}})
                     });
@@ -309,7 +309,7 @@ var BluetoothScanner = module.exports = function (option, callback) {
                     //写入统计库
                     dbtools.updateStatisticsdb(macAddr, flag, mi, mobile, devicename, {
                         "ledc_failed": 1,
-                        "lecc": 1
+                        "lecc_success": 1
                     }, function (data) {
                         callback({"result": 0, "value": "关闭ble失败！"});
                     });
@@ -318,7 +318,7 @@ var BluetoothScanner = module.exports = function (option, callback) {
                     //写入统计库
                     dbtools.updateStatisticsdb(macAddr, flag, mi, mobile, devicename, {
                         "ledc_success": 1,
-                        "lecc": 1
+                        "lecc_success": 1
                     }, function () {
                         callback({"result": 1, "value": "断开ble成功！"});
                     });
